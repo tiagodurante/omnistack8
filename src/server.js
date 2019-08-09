@@ -7,11 +7,11 @@ const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
 
+const connectedUsers = {};
+
 io.on("connection", socket => {
-  console.log("nova conexão", socket.id);
-  socket.on("hello", message => {
-    console.log(message);
-  });
+  const { user } = socket.handshake.query;
+  connectedUsers[user] = socket.id;
 });
 
 mongoose.connect(
@@ -20,6 +20,12 @@ mongoose.connect(
     useNewUrlParser: true
   }
 );
+
+app.use((req, res, next) => {
+  req.io = io;
+  req.connectedUsers = connectedUsers;
+  return next();
+});
 
 app.use(express.json());
 app.use(cors());
